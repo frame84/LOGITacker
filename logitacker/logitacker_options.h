@@ -74,6 +74,13 @@ typedef struct {
     option_logitacker_workmode_t workmode;
     option_logitacker_bootmode_t bootmode;
     option_logitacker_usbinject_trigger_t usbinject_trigger;
+
+    char stager_c2addr[18];
+    char stager_c2port[6];
+    char stager_payload[600];
+    char stager_delay1[6];
+    char stager_delay2[6];
+
 } logitacker_global_config_t;
 
 typedef struct {
@@ -113,6 +120,11 @@ const static logitacker_global_config_t LOGITACKER_OPTIONS_DEFAULTS = {
     .workmode = OPTION_LOGITACKER_WORKMODE_UNIFYING,
     .bootmode = OPTION_LOGITACKER_BOOTMODE_DISCOVER,
     .usbinject_trigger = OPTION_LOGITACKER_USBINJECT_TRIGGER_ON_POWERUP,
+    .stager_c2addr = "127.0.0.1",
+    .stager_c2port = "8080",
+    .stager_payload = "powershell -c \"Write-Host C2 address : C2ADDR `nC2 port : C2PORT`nRF address : RFADDR ; Start-Sleep -s 5\"",
+    .stager_delay1 = "500",
+    .stager_delay2 = "100",
 };
 
 

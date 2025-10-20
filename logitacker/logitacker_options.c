@@ -282,5 +282,13 @@ void logitacker_options_print(nrf_cli_t const * p_cli)
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\taction after successful injection       : %s\r\n", injection_success_action_str);
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\taction after failed injection           : %s\r\n", injection_fail_action_str);
 
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\r\n");
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager options\r\n");
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tc2addr                                  : '%s'\r\n", g_logitacker_global_config.stager_c2addr);
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tc2port                                  : '%s'\r\n", g_logitacker_global_config.stager_c2port);
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tpayload                                 : '%s'\r\n", g_logitacker_global_config.stager_payload);
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tdelay1                                  : '%s'\r\n", g_logitacker_global_config.stager_delay1);
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tdelay2                                  : '%s'\r\n", g_logitacker_global_config.stager_delay2);
+
         return;
 }

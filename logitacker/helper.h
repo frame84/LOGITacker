@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 
 
 bool helper_array_check_crc16(uint8_t * p_array, uint8_t len);
@@ -15,6 +17,8 @@ void helper_addr_to_hex_str(char * p_result, uint8_t len, uint8_t const * const 
 uint32_t helper_hex_str_to_addr(uint8_t * p_result_addr, uint8_t len, char const * const addr_str);
 uint32_t helper_hex_str_to_bytes(uint8_t * p_result, uint8_t len, char const * const hex_str);
 char *helper_strsep (char **stringp, const char *delim);
+
+char *helper_str_replace(const char* string, const char* substr, const char* replacement);
 
 uint32_t helper_flash_end_addr(void);
 

