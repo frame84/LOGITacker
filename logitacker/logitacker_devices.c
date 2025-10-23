@@ -711,6 +711,11 @@ uint32_t logitacker_devices_device_update_classification(logitacker_devices_unif
         case UNIFYING_RF_REPORT_PLAIN_MOUSE:
             if (len != 10) return NRF_ERROR_INVALID_DATA;
             p_device->report_types |= LOGITACKER_DEVICE_REPORT_TYPES_MOUSE;
+	    if (p_dongle->wpid[0] == 0x00 && p_dongle->wpid[1] == 0x00){
+                p_device->potential_vuln_plain_injection = true;
+	    } else {
+                p_device->potential_vuln_plain_injection = false;
+	    }
             break;
         case UNIFYING_RF_REPORT_PLAIN_MULTIMEDIA:
             p_device->report_types |= LOGITACKER_DEVICE_REPORT_TYPES_MULTIMEDIA;

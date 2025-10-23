@@ -299,6 +299,7 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_vt100_color_t outcol = NRF_CLI_VT100_COLOR_DEFAULT;
     if (dev_is_logitech) outcol = NRF_CLI_VT100_COLOR_BLUE;
     //if (p_device->vuln_forced_pairing) outcol = NRF_CLI_VT100_COLOR_YELLOW;
+    if (p_device->potential_vuln_plain_injection || p_device->potential_vuln_plain_injection_confirmed) outcol = NRF_CLI_VT100_COLOR_YELLOW;
     if (p_device->vuln_plain_injection) outcol = NRF_CLI_VT100_COLOR_GREEN;
     if (p_device->key_known) outcol = NRF_CLI_VT100_COLOR_RED;
 
@@ -1292,6 +1293,11 @@ static void cmd_enum_active(nrf_cli_t const * p_cli, size_t argc, char **argv) {
         char tmp_addr_str[16];
         helper_addr_to_hex_str(tmp_addr_str, 5, addr);
         nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_GREEN, "Starting active enumeration for device %s\r\n", tmp_addr_str);
+
+        logitacker_devices_unifying_device_t * p_device = NULL;
+        logitacker_devices_get_device(&p_device, addr);
+        p_device->potential_vuln_plain_injection_confirmed = true;
+
         logitacker_enter_mode_active_enum(addr);
         return;
     } else {
