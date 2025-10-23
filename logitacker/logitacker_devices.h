@@ -107,8 +107,6 @@ typedef struct logitacker_device_unifying_device {
     char device_name[17];       //5
 
     bool vuln_plain_injection;
-    bool potential_vuln_plain_injection;
-    bool potential_vuln_plain_injection_confirmed;
     bool vuln_forced_pairing;
 
     bool key_known;

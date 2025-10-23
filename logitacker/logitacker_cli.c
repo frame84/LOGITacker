@@ -299,7 +299,6 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_vt100_color_t outcol = NRF_CLI_VT100_COLOR_DEFAULT;
     if (dev_is_logitech) outcol = NRF_CLI_VT100_COLOR_BLUE;
     //if (p_device->vuln_forced_pairing) outcol = NRF_CLI_VT100_COLOR_YELLOW;
-    if (p_device->potential_vuln_plain_injection || p_device->potential_vuln_plain_injection_confirmed) outcol = NRF_CLI_VT100_COLOR_YELLOW;
     if (p_device->vuln_plain_injection) outcol = NRF_CLI_VT100_COLOR_GREEN;
     if (p_device->key_known) outcol = NRF_CLI_VT100_COLOR_RED;
 
@@ -349,13 +348,6 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_fprintf(p_cli, outcol, " dongle WPID: 0x%.2x%.2x", p_dongle->wpid[0], p_dongle->wpid[1]);
     if (p_dongle->is_nordic) nrf_cli_fprintf(p_cli, outcol, " (Nordic)");
     if (p_dongle->is_texas_instruments) nrf_cli_fprintf(p_cli, outcol, " (Texas Instruments)");
-    if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection_confirmed) {
-        nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver)");
-    } else {
-        if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection) {
-            nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver ? active_enum %s)", tmp_addr_str);
-	}
-    }
     nrf_cli_fprintf(p_cli, outcol, "\r\n");
 
     if (p_device->key_known) {
@@ -736,10 +728,6 @@ static void cmd_options_stager_payload(nrf_cli_t const *p_cli, size_t argc, char
     nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager payload: %s\r\n", g_logitacker_global_config.stager_payload);
 }
 
-static void cmd_script_show(nrf_cli_t const *p_cli, size_t argc, char **argv) {
-    logitacker_script_engine_print_current_tasks(p_cli);
-}
-
 static void cmd_options_stager_delay1(nrf_cli_t const *p_cli, size_t argc, char **argv) {
     if (argc > 1)
     {
@@ -756,6 +744,10 @@ static void cmd_options_stager_delay2(nrf_cli_t const *p_cli, size_t argc, char 
     }
 
     nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "stager delay2: %s\r\n", g_logitacker_global_config.stager_delay2);
+}
+
+static void cmd_script_show(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+    logitacker_script_engine_print_current_tasks(p_cli);
 }
 
 static void cmd_script_string(nrf_cli_t const *p_cli, size_t argc, char **argv)
@@ -1300,11 +1292,6 @@ static void cmd_enum_active(nrf_cli_t const * p_cli, size_t argc, char **argv) {
         char tmp_addr_str[16];
         helper_addr_to_hex_str(tmp_addr_str, 5, addr);
         nrf_cli_fprintf(p_cli, NRF_CLI_VT100_COLOR_GREEN, "Starting active enumeration for device %s\r\n", tmp_addr_str);
-
-        logitacker_devices_unifying_device_t * p_device = NULL;
-        logitacker_devices_get_device(&p_device, addr);
-        p_device->potential_vuln_plain_injection_confirmed = true;
-
         logitacker_enter_mode_active_enum(addr);
         return;
     } else {

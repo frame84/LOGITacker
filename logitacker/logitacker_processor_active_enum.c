@@ -340,16 +340,8 @@ void processor_active_enum_esb_handler_func_(logitacker_processor_active_enum_ct
                             if (p_dongle != NULL) {
                                 // dongle wpid is in response (byte 8,9)
                                 memcpy(p_dongle->wpid, &self->tmp_rx_payload.data[9], 2);
-                                if (p_dongle->wpid[0] == 0x88 && p_dongle->wpid[1] == 0x02) {
-                                    p_dongle->is_nordic = true; 
-                                    p_device->potential_vuln_plain_injection = false;
-                                    p_device->potential_vuln_plain_injection_confirmed = false;
-				}
-                                if (p_dongle->wpid[0] == 0x88 && p_dongle->wpid[1] == 0x08) {
-                                    p_dongle->is_texas_instruments = true; 
-                                    p_device->potential_vuln_plain_injection = false;
-                                    p_device->potential_vuln_plain_injection_confirmed = false;
-				}
+                                if (p_dongle->wpid[0] == 0x88 && p_dongle->wpid[1] == 0x02) p_dongle->is_nordic = true;
+                                if (p_dongle->wpid[0] == 0x88 && p_dongle->wpid[1] == 0x08) p_dongle->is_texas_instruments = true;
                                 NRF_LOG_INFO("Dongle WPID is %.2X%.2X (TI: %s, Nordic: %s)", p_dongle->wpid[0], p_dongle->wpid[1], p_dongle->is_texas_instruments ? "yes" : "no", p_dongle->is_nordic ? "yes" : "no");
                             }
 
