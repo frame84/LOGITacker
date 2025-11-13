@@ -81,6 +81,8 @@ typedef struct {
     char stager_delay1[6];
     char stager_delay2[6];
 
+    bool nano_receiver;
+
 } logitacker_global_config_t;
 
 typedef struct {
@@ -125,6 +127,7 @@ const static logitacker_global_config_t LOGITACKER_OPTIONS_DEFAULTS = {
     .stager_payload = "powershell -c \"Write-Host C2 address : C2ADDR `nC2 port : C2PORT`nRF address : RFADDR ; Start-Sleep -s 5\"",
     .stager_delay1 = "500",
     .stager_delay2 = "100",
+    .nano_receiver = false,
 };
 
 

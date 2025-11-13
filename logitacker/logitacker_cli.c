@@ -299,7 +299,9 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_vt100_color_t outcol = NRF_CLI_VT100_COLOR_DEFAULT;
     if (dev_is_logitech) outcol = NRF_CLI_VT100_COLOR_BLUE;
     //if (p_device->vuln_forced_pairing) outcol = NRF_CLI_VT100_COLOR_YELLOW;
-    if (p_device->potential_vuln_plain_injection || p_device->potential_vuln_plain_injection_confirmed) outcol = NRF_CLI_VT100_COLOR_YELLOW;
+    if (g_logitacker_global_config.nano_receiver) {
+        if (p_device->potential_vuln_plain_injection || p_device->potential_vuln_plain_injection_confirmed) outcol = NRF_CLI_VT100_COLOR_YELLOW;
+    }
     if (p_device->vuln_plain_injection) outcol = NRF_CLI_VT100_COLOR_GREEN;
     if (p_device->key_known) outcol = NRF_CLI_VT100_COLOR_RED;
 
@@ -349,6 +351,15 @@ static void print_logitacker_device_info(nrf_cli_t const * p_cli, const logitack
     nrf_cli_fprintf(p_cli, outcol, " dongle WPID: 0x%.2x%.2x", p_dongle->wpid[0], p_dongle->wpid[1]);
     if (p_dongle->is_nordic) nrf_cli_fprintf(p_cli, outcol, " (Nordic)");
     if (p_dongle->is_texas_instruments) nrf_cli_fprintf(p_cli, outcol, " (Texas Instruments)");
+    if (g_logitacker_global_config.nano_receiver) {
+        if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection_confirmed) {
+            nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver)");
+        } else {
+            if (!p_dongle->is_texas_instruments && !p_dongle->is_nordic && p_device->potential_vuln_plain_injection) {
+                nrf_cli_fprintf(p_cli, outcol, " (Nano Receiver ? active_enum %s)", tmp_addr_str);
+	    }
+        }
+    }
     nrf_cli_fprintf(p_cli, outcol, "\r\n");
 
     if (p_device->key_known) {
@@ -1188,6 +1199,17 @@ static void cmd_options_discover_autostoreplain(nrf_cli_t const *p_cli, size_t a
     nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "auto-store discovered devices, if they allow plain injection: %s\r\n", g_logitacker_global_config.auto_store_plain_injectable ? "on" : "off");
 }
 
+static void cmd_options_discover_nanoreceivers(nrf_cli_t const *p_cli, size_t argc, char **argv)
+{
+    if (argc > 1)
+    {
+        if (strcmp(argv[1], "off") == 0 || strcmp(argv[1], "OFF") == 0) g_logitacker_global_config.nano_receiver = false;
+        else if (strcmp(argv[1], "on") == 0 || strcmp(argv[1], "ON") == 0) g_logitacker_global_config.nano_receiver = true;
+    }
+
+    nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "discover and active_enum modes for identifying and highlighting nano receivers: %s\r\n", g_logitacker_global_config.nano_receiver ? "on" : "off");
+}
+
 static void cmd_options_passiveenum_pass_keyboard(nrf_cli_t const *p_cli, size_t argc, char **argv)
 {
     if (argc > 1)
@@ -1641,6 +1663,7 @@ NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options_discover)
     NRF_CLI_CMD(pass-through-raw, &m_sub_options_on_off, "pass all received promiscuous RF reports to LOGITacker's USB hidraw interface", cmd_options_discover_pass_raw),
     NRF_CLI_CMD(onhit, &m_sub_options_discover_onhit, "select action to take when device a RF address is discovered", cmd_help),
     NRF_CLI_CMD(auto-store-plain-injectable, &m_sub_options_on_off, "automatically store discovered devices to flash if they allow plain injection", cmd_options_discover_autostoreplain),
+    NRF_CLI_CMD(highlight-nanoreceiver, &m_sub_options_on_off, "use for identifying and highlighting nano receivers", cmd_options_discover_nanoreceiver),
     NRF_CLI_SUBCMD_SET_END
 };
 

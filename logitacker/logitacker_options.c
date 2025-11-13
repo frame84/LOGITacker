@@ -261,6 +261,7 @@ void logitacker_options_print(nrf_cli_t const * p_cli)
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\taction after RF address discovered      : %s\r\n", discover_on_hit_str);
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tpass RF frames to USB raw HID           : %s\r\n", g_logitacker_global_config.discover_pass_through_hidraw ? "on" : "off");
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\tauto store plain injectable devices     : %s\r\n", g_logitacker_global_config.auto_store_plain_injectable ? "on" : "off");
+        nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\thighlighting nano receivers             : %s\r\n", g_logitacker_global_config.nano_receiver ? "on" : "off");
 
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "\r\n");
         nrf_cli_fprintf(p_cli, NRF_CLI_DEFAULT, "passive-enumeration mode options\r\n");
