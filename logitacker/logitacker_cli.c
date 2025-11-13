@@ -1663,7 +1663,7 @@ NRF_CLI_CREATE_STATIC_SUBCMD_SET(m_sub_options_discover)
     NRF_CLI_CMD(pass-through-raw, &m_sub_options_on_off, "pass all received promiscuous RF reports to LOGITacker's USB hidraw interface", cmd_options_discover_pass_raw),
     NRF_CLI_CMD(onhit, &m_sub_options_discover_onhit, "select action to take when device a RF address is discovered", cmd_help),
     NRF_CLI_CMD(auto-store-plain-injectable, &m_sub_options_on_off, "automatically store discovered devices to flash if they allow plain injection", cmd_options_discover_autostoreplain),
-    NRF_CLI_CMD(highlight-nanoreceiver, &m_sub_options_on_off, "use for identifying and highlighting nano receivers", cmd_options_discover_nanoreceiver),
+    NRF_CLI_CMD(highlight-nanoreceiver, &m_sub_options_on_off, "use for identifying and highlighting nano receivers", cmd_options_discover_nanoreceivers),
     NRF_CLI_SUBCMD_SET_END
 };
 
